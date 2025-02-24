@@ -46,9 +46,34 @@ const SUPPORTED_LANGUAGES = {
   th: 'Thai',
   tr: 'Turkish',
   fa: 'Persian (Farsi)',
-  pl: 'Polish',
+  pl: 'Polish'
 };
 
+// Text-to-Speech Language Configuration
+const TTS_LANGUAGE_CODES = {
+  en: { languageCode: "en-US", voiceName: "en-US-Wavenet-D" },
+  hi: { languageCode: "hi-IN", voiceName: "hi-IN-Wavenet-A" },
+  es: { languageCode: "es-ES", voiceName: "es-ES-Wavenet-B" },
+  fr: { languageCode: "fr-FR", voiceName: "fr-FR-Wavenet-C" },
+  zh: { languageCode: "cmn-CN", voiceName: "cmn-CN-Wavenet-A" },
+  ar: { languageCode: "ar-XA", voiceName: "ar-XA-Wavenet-B" },
+  ru: { languageCode: "ru-RU", voiceName: "ru-RU-Wavenet-C" },
+  pt: { languageCode: "pt-PT", voiceName: "pt-PT-Wavenet-A" },
+  de: { languageCode: "de-DE", voiceName: "de-DE-Wavenet-B" },
+  ja: { languageCode: "ja-JP", voiceName: "ja-JP-Wavenet-A" },
+  ko: { languageCode: "ko-KR", voiceName: "ko-KR-Wavenet-B" },
+  it: { languageCode: "it-IT", voiceName: "it-IT-Wavenet-A" },
+  vi: { languageCode: "vi-VN", voiceName: "vi-VN-Wavenet-A" },
+  id: { languageCode: "id-ID", voiceName: "id-ID-Wavenet-A" },
+  th: { languageCode: "th-TH", voiceName: "th-TH-Wavenet-A" },
+  tr: { languageCode: "tr-TR", voiceName: "tr-TR-Wavenet-A" },
+  fa: { languageCode: "fa-IR", voiceName: "fa-IR-Wavenet-A" },
+  pl: { languageCode: "pl-PL", voiceName: "pl-PL-Wavenet-A" }
+};
+
+const getTTSLanguageConfig = (lang) => {
+  return TTS_LANGUAGE_CODES[lang] || TTS_LANGUAGE_CODES['en'];
+};
 
 function Translator() {
   const [text, setText] = useState('');
@@ -141,6 +166,8 @@ function Translator() {
       const apiKey = import.meta.env.VITE_GOOGLE_CLOUD_API_KEY;
       const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
 
+      const { languageCode, voiceName } = getTTSLanguageConfig(targetLang);
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -148,7 +175,11 @@ function Translator() {
         },
         body: JSON.stringify({
           input: { text: translatedText },
-          voice: { languageCode: targetLang, ssmlGender: 'FEMALE' },
+          voice: {
+            languageCode,
+            name: voiceName,
+            ssmlGender: 'FEMALE',
+          },
           audioConfig: { audioEncoding: 'MP3' },
         }),
       });
@@ -164,7 +195,6 @@ function Translator() {
       const { audioContent } = await response.json();
       const audio = new Audio(`data:audio/mp3;base64,${audioContent}`);
       audio.play();
-
     } catch (error) {
       console.error('Error in text-to-speech:', error);
       setErrorMessage(error.message || 'Failed to generate speech. Please try again.');
