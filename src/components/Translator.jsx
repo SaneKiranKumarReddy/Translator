@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { FaCopy, FaVolumeUp } from 'react-icons/fa';
 
+// Supported languages for translation
 const SUPPORTED_LANGUAGES = {
   // Indian Languages
   as: 'Assamese',
@@ -27,7 +28,7 @@ const SUPPORTED_LANGUAGES = {
   te: 'Telugu',
   ur: 'Urdu',
 
-  // Major Foreign Languages
+  // Foreign Languages
   en: 'English',
   zh: 'Chinese (Mandarin)',
   es: 'Spanish',
@@ -39,35 +40,44 @@ const SUPPORTED_LANGUAGES = {
   ja: 'Japanese',
   ko: 'Korean',
   it: 'Italian',
-
-  // Additional Global Languages
   vi: 'Vietnamese',
-  id: 'Indonesian (Bahasa)',
+  id: 'Indonesian',
   th: 'Thai',
   tr: 'Turkish',
-  fa: 'Persian (Farsi)',
+  fa: 'Persian',
   pl: 'Polish'
 };
 
-// Text-to-Speech Language Configuration
+// TTS configurations (male voices where available)
 const TTS_LANGUAGE_CODES = {
+  // Indian Languages
+  hi: { languageCode: "hi-IN", voiceName: "hi-IN-Wavenet-B" },
+  bn: { languageCode: "bn-IN", voiceName: "bn-IN-Standard-B" },
+  ta: { languageCode: "ta-IN", voiceName: "ta-IN-Standard-B" },
+  te: { languageCode: "te-IN", voiceName: "te-IN-Standard-B" },
+  mr: { languageCode: "mr-IN", voiceName: "mr-IN-Standard-B" },
+  gu: { languageCode: "gu-IN", voiceName: "gu-IN-Standard-B" },
+  kn: { languageCode: "kn-IN", voiceName: "kn-IN-Standard-B" },
+  pa: { languageCode: "pa-IN", voiceName: "pa-IN-Standard-B" },
+  ur: { languageCode: "ur-IN", voiceName: "ur-IN-Standard-B" },
+  ml: { languageCode: "ml-IN", voiceName: "ml-IN-Standard-B" },
+
+  // Foreign Languages
   en: { languageCode: "en-US", voiceName: "en-US-Wavenet-D" },
-  hi: { languageCode: "hi-IN", voiceName: "hi-IN-Wavenet-A" },
   es: { languageCode: "es-ES", voiceName: "es-ES-Wavenet-B" },
-  fr: { languageCode: "fr-FR", voiceName: "fr-FR-Wavenet-C" },
-  zh: { languageCode: "cmn-CN", voiceName: "cmn-CN-Wavenet-A" },
-  ar: { languageCode: "ar-XA", voiceName: "ar-XA-Wavenet-B" },
-  ru: { languageCode: "ru-RU", voiceName: "ru-RU-Wavenet-C" },
-  pt: { languageCode: "pt-PT", voiceName: "pt-PT-Wavenet-A" },
+  fr: { languageCode: "fr-FR", voiceName: "fr-FR-Wavenet-B" },
   de: { languageCode: "de-DE", voiceName: "de-DE-Wavenet-B" },
-  ja: { languageCode: "ja-JP", voiceName: "ja-JP-Wavenet-A" },
-  ko: { languageCode: "ko-KR", voiceName: "ko-KR-Wavenet-B" },
   it: { languageCode: "it-IT", voiceName: "it-IT-Wavenet-A" },
+  ja: { languageCode: "ja-JP", voiceName: "ja-JP-Wavenet-B" },
+  ko: { languageCode: "ko-KR", voiceName: "ko-KR-Wavenet-B" },
+  ru: { languageCode: "ru-RU", voiceName: "ru-RU-Wavenet-B" },
+  zh: { languageCode: "cmn-CN", voiceName: "cmn-CN-Wavenet-B" },
+  ar: { languageCode: "ar-XA", voiceName: "ar-XA-Wavenet-B" },
+  pt: { languageCode: "pt-PT", voiceName: "pt-PT-Wavenet-A" },
   vi: { languageCode: "vi-VN", voiceName: "vi-VN-Wavenet-A" },
   id: { languageCode: "id-ID", voiceName: "id-ID-Wavenet-A" },
   th: { languageCode: "th-TH", voiceName: "th-TH-Wavenet-A" },
   tr: { languageCode: "tr-TR", voiceName: "tr-TR-Wavenet-A" },
-  fa: { languageCode: "fa-IR", voiceName: "fa-IR-Wavenet-A" },
   pl: { languageCode: "pl-PL", voiceName: "pl-PL-Wavenet-A" }
 };
 
@@ -92,10 +102,9 @@ function Translator() {
       const intervalId = setInterval(() => {
         setDisplayedText(translatedText.slice(0, i));
         i++;
-        if (i > translatedText.length) {
-          clearInterval(intervalId);
-        }
+        if (i > translatedText.length) clearInterval(intervalId);
       }, 50);
+      return () => clearInterval(intervalId);
     }
   }, [translatedText]);
 
@@ -109,41 +118,35 @@ function Translator() {
 
     try {
       const apiKey = import.meta.env.VITE_GOOGLE_CLOUD_API_KEY;
-      const translateUrl = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`;
+      const response = await fetch(
+        `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            q: text,
+            source: sourceLang === 'auto' ? undefined : sourceLang,
+            target: targetLang,
+            format: 'text'
+          })
+        }
+      );
 
-      // Translation Request (Auto-detect source)
-      const translateResponse = await fetch(translateUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          q: text,
-          source: sourceLang === 'auto' ? undefined : sourceLang,
-          target: targetLang,
-          format: 'text',
-        }),
-      });
-
-      if (!translateResponse.ok) {
-        const errorData = await translateResponse.json();
-        throw new Error(`Translation request failed: ${translateResponse.status} - ${errorData.error.message}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Translation failed: ${errorData.error.message}`);
       }
 
-      const translateData = await translateResponse.json();
+      const { data } = await response.json();
+      const translation = data.translations[0];
+      setTranslatedText(translation.translatedText);
 
-      if (translateData?.data?.translations?.length > 0) {
-        const translation = translateData.data.translations[0];
-        setTranslatedText(translation.translatedText);
-
-        // Set detected language if source was "auto"
-        if (sourceLang === 'auto' && translation.detectedSourceLanguage) {
-          setDetectedLanguage(translation.detectedSourceLanguage);
-        }
-      } else {
-        throw new Error('Invalid response from translation service');
+      if (sourceLang === 'auto' && translation.detectedSourceLanguage) {
+        setDetectedLanguage(translation.detectedSourceLanguage);
       }
     } catch (error) {
       console.error('Translation error:', error);
-      setErrorMessage(error.message || 'Something went wrong. Please try again.');
+      setErrorMessage(error.message || 'Translation failed. Please try again.');
       setTimeout(() => setErrorMessage(''), 4000);
     } finally {
       setButtonText('Translate');
@@ -164,40 +167,37 @@ function Translator() {
 
     try {
       const apiKey = import.meta.env.VITE_GOOGLE_CLOUD_API_KEY;
-      const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
-
       const { languageCode, voiceName } = getTTSLanguageConfig(targetLang);
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          input: { text: translatedText },
-          voice: {
-            languageCode,
-            name: voiceName,
-            ssmlGender: 'FEMALE',
-          },
-          audioConfig: { audioEncoding: 'MP3' },
-        }),
-      });
+      const response = await fetch(
+        `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: { text: translatedText },
+            voice: {
+              languageCode,
+              name: voiceName,
+              ssmlGender: 'MALE'
+            },
+            audioConfig: { audioEncoding: 'MP3' }
+          })
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        if (errorData.error.message.includes('language is not supported')) {
-          throw new Error(`The language "${SUPPORTED_LANGUAGES[targetLang]}" is not supported for text-to-speech.`);
-        }
-        throw new Error(`Text-to-speech request failed: ${response.status} - ${errorData.error.message}`);
+        throw new Error(errorData.error.message);
       }
 
       const { audioContent } = await response.json();
-      const audio = new Audio(`data:audio/mp3;base64,${audioContent}`);
-      audio.play();
+      new Audio(`data:audio/mp3;base64,${audioContent}`).play();
     } catch (error) {
-      console.error('Error in text-to-speech:', error);
-      setErrorMessage(error.message || 'Failed to generate speech. Please try again.');
+      console.error('TTS error:', error);
+      setErrorMessage(error.message.includes('Voice') 
+        ? `Voice not available for ${SUPPORTED_LANGUAGES[targetLang]}`
+        : 'Speech generation failed');
       setTimeout(() => setErrorMessage(''), 4000);
     }
   };
@@ -211,6 +211,7 @@ function Translator() {
             <option key={code} value={code}>{name}</option>
           ))}
         </select>
+        
         <select value={targetLang} onChange={(e) => setTargetLang(e.target.value)}>
           {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
             <option key={code} value={code}>{name}</option>
@@ -220,7 +221,7 @@ function Translator() {
 
       {detectedLanguage && sourceLang === 'auto' && (
         <div className="detected-language">
-          Detected Language: {SUPPORTED_LANGUAGES[detectedLanguage] || detectedLanguage}
+          Detected: {SUPPORTED_LANGUAGES[detectedLanguage] || detectedLanguage}
         </div>
       )}
 
@@ -260,11 +261,7 @@ function Translator() {
         {buttonText}
       </button>
 
-      {errorMessage && (
-        <div className="error-message">
-          {errorMessage}
-        </div>
-      )}
+      {errorMessage && <div className="error-message">{errorMessage}</div>}
     </div>
   );
 }
