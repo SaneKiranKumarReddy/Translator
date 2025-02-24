@@ -3,19 +3,52 @@ import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { FaCopy, FaVolumeUp } from 'react-icons/fa';
 
 const SUPPORTED_LANGUAGES = {
-  en: 'English',
-  es: 'Spanish',
-  fr: 'French',
-  ja: 'Japanese',
-  zh: 'Chinese',
+  // Indian Languages
+  as: 'Assamese',
+  bn: 'Bengali',
+  brx: 'Bodo',
+  doi: 'Dogri',
+  gu: 'Gujarati',
   hi: 'Hindi',
+  kn: 'Kannada',
+  ks: 'Kashmiri',
+  gom: 'Konkani',
+  mai: 'Maithili',
+  ml: 'Malayalam',
+  mni: 'Manipuri (Meitei)',
+  mr: 'Marathi',
+  ne: 'Nepali',
+  or: 'Odia',
+  pa: 'Punjabi',
+  sa: 'Sanskrit',
+  sat: 'Santali',
+  sd: 'Sindhi',
   ta: 'Tamil',
   te: 'Telugu',
-  kn: 'Kannada',
-  mr: 'Marathi',
-  ml: 'Malayalam',
-  ur: 'Urdu'
+  ur: 'Urdu',
+
+  // Major Foreign Languages
+  en: 'English',
+  zh: 'Chinese (Mandarin)',
+  es: 'Spanish',
+  fr: 'French',
+  ar: 'Arabic',
+  ru: 'Russian',
+  pt: 'Portuguese',
+  de: 'German',
+  ja: 'Japanese',
+  ko: 'Korean',
+  it: 'Italian',
+
+  // Additional Global Languages
+  vi: 'Vietnamese',
+  id: 'Indonesian (Bahasa)',
+  th: 'Thai',
+  tr: 'Turkish',
+  fa: 'Persian (Farsi)',
+  pl: 'Polish',
 };
+
 
 function Translator() {
   const [text, setText] = useState('');
