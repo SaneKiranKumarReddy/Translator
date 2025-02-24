@@ -1,0 +1,24 @@
+:root {
+    --bg-color: #f9f9f9;
+    --primary-text: #333333;
+    --secondary-text: #666666;
+    --accent-color: #2b78f9;
+    --card-bg: #ffffff;
+    --button-hover: #1a5fd1;
+  }
+  
+  .dark-theme {
+    --bg-color: #1e1e1e;
+    --primary-text: #ffffff;
+    --secondary-text: #cccccc;
+    --accent-color: #5392ff;
+    --card-bg: #2c2c2c;
+    --button-hover: #3a7ae0;
+  }
+  
+  body {
+    background-color: var(--bg-color);
+    color: var(--primary-text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
